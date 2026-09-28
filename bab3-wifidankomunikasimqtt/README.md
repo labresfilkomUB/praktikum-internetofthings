@@ -1,9 +1,3 @@
-
----
-
-## 4. README Bab 3 — Wi-Fi & Komunikasi MQTT
-
-```markdown
 # 📡 Bab 3 — Wi-Fi & Komunikasi MQTT
 
 Welcome to **Bab 3!**

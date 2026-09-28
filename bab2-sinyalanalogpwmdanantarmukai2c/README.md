@@ -1,9 +1,3 @@
-
----
-
-## 3. README Bab 2 — Sinyal Analog, PWM & I2C
-
-```markdown
 # 🎛️ Bab 2 — Sinyal Analog, PWM & Antarmuka I2C
 
 Pada Bab 1 kita sudah mengenal input dan output digital.

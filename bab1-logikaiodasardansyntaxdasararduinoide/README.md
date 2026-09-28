@@ -1,9 +1,3 @@
-
----
-
-## 2. README Bab 1 — Logika I/O Dasar & Syntax Arduino IDE
-
-```markdown
 # 🔌 Bab 1 — Logika I/O Dasar & Syntax Dasar Arduino IDE
 
 Selamat datang di Bab 1 Praktikum Internet of Things!
