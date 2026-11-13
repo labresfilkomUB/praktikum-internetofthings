@@ -1,0 +1,125 @@
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
+#include "DHT.h"
+
+#define DHTPIN 4
+#define DHTTYPE DHT11
+#define POTPIN 34
+#define LED_BIRU 25
+#define LED_MERAH 27
+
+DHT dht(DHTPIN, DHTTYPE);
+WiFiClientSecure espClient;
+PubSubClient client(espClient);
+
+const char* ssid = "knowledge";
+const char* password = "eliteball";
+const char* mqtt_server = "m66b7a61.ala.asia-southeast1.emqxsl.com";
+const char* mqtt_username = "reslab";
+const char* mqtt_password = "reslab";
+
+const char* topic_telemetry = "res/iot/telemetry";
+const char* topic_led = "res/iot/control/led";
+const char* topic_led2 = "res/iot/control/led2";
+
+bool statusBiru = false;
+bool statusMerah = false;
+
+unsigned long lastPublish = 0;
+unsigned long lastPWM = 0;
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  String pesan = "";
+  for (unsigned int i = 0; i < length; i++) {
+    pesan += (char)payload[i];
+  }
+  pesan.trim();
+
+  Serial.println("[SUBSCRIBE] " + String(topic) + " : " + pesan);
+  if (String(topic) == topic_led) {
+    statusBiru = (pesan == "ON" || pesan == "true");
+  }
+  if (String(topic) == topic_led2) {
+    statusMerah = (pesan == "ON" || pesan == "true");
+  }
+}
+
+void reconnectMQTT() {
+  while (!client.connected()) {
+    String clientId = "ESP32-BERES-" + String(random(0xffff), HEX);
+    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
+      client.subscribe(topic_led);
+      client.subscribe(topic_led2);
+      Serial.println("[MQTT] Terhubung");
+    } else {
+      Serial.println("[MQTT] Gagal, coba lagi");
+      delay(5000);
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+
+  pinMode(LED_BIRU, OUTPUT);
+  pinMode(LED_MERAH, OUTPUT);
+  pinMode(POTPIN, INPUT);
+
+  analogWrite(LED_BIRU, 0);
+  analogWrite(LED_MERAH, 0);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+
+  Serial.println("[WiFi] Terhubung");
+
+  espClient.setInsecure();
+  client.setServer(mqtt_server, 8883);
+  client.setCallback(callback);
+}
+
+
+void loop() {
+  if (!client.connected()) reconnectMQTT();
+  client.loop();
+
+  unsigned long now = millis();
+
+  if (now - lastPWM >= 30) {
+    lastPWM = now;
+    int adc = analogRead(POTPIN);
+    int pwm = map(adc, 0, 4095, 0, 255);
+    analogWrite(LED_BIRU, statusBiru ? pwm : 0);
+    analogWrite(LED_MERAH, statusMerah ? pwm : 0);
+  }
+
+
+  if (now - lastPublish >= 5000) {
+    lastPublish = now;
+    float suhu = dht.readTemperature();
+    float kelembapan = dht.readHumidity();
+    if (isnan(suhu) || isnan(kelembapan)) {
+      Serial.println("[DHT] Gagal membaca sensor");
+      return;
+    }
+
+
+    JsonDocument doc;
+    doc["suhu"] = suhu;
+    doc["kelembapan"] = kelembapan;
+    doc["device"] = "ESP32-BERES";
+
+    String pesan;
+    serializeJson(doc, pesan);
+
+    client.publish(topic_telemetry, pesan.c_str());
+    Serial.println("[PUBLISH] " + pesan);
+  }
+}
