@@ -14,11 +14,11 @@ DHT dht(DHTPIN, DHTTYPE);
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
 
-const char* ssid = "knowledge";
-const char* password = "eliteball";
-const char* mqtt_server = "m66b7a61.ala.asia-southeast1.emqxsl.com";
-const char* mqtt_username = "reslab";
-const char* mqtt_password = "reslab";
+const char* ssid = "SSID";
+const char* password = "PASSWORD";
+const char* mqtt_server = "MQTT_SERVER";
+const char* mqtt_username = "MQTT_USERNAME";
+const char* mqtt_password = "MQTT_PASSWORD";
 
 const char* topic_telemetry = "res/iot/telemetry";
 const char* topic_led = "res/iot/control/led";
